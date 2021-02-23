@@ -1,8 +1,8 @@
 {
   "name": "wait-for-it.js",
-  "version": "1.0.0",
+  "version": "0.0.0",
   "description": "",
-  "homepage": "https://github.com/erikschmutz/wait-for-it.js#readme",
+  "homepage": "https://github.com/erikschmutz/wait-for-it.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/erikschmutz/wait-for-it.js.git"
