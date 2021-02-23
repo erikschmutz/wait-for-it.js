@@ -1,0 +1,16 @@
+{
+  "name": "wait-for-it.js",
+  "version": "1.0.0",
+  "description": "",
+  "homepage": "https://github.com/erikschmutz/wait-for-it.js#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/erikschmutz/wait-for-it.js.git"
+  },
+  "main": "index.js",
+  "scripts": {
+    "start": "node index"
+  },
+  "author": "",
+  "license": "ISC"
+}
