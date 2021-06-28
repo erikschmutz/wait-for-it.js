@@ -1,8 +1,10 @@
-const url = require("url");
+#! /usr/bin/env node
+
 const http = require("http");
 const https = require("https");
 const util = require("util");
-const exec = util.promisify(require("child_process").exec);
+const exec = require("child_process").spawn;
+const net = require("net");
 
 const usage = `
 Usage:
@@ -58,11 +60,11 @@ const retry = getArg(args, "--retry", "-r");
 const command = args.slice(args.indexOf("--") + 1).join(" ");
 
 if (args.indexOf("--") === -1) {
-  error("Command not provider");
+  error("Command not provided");
 }
 
 if (!command) {
-  error("Command not provider");
+  error("Command not provided");
 }
 
 if (!uri) {
@@ -78,27 +80,33 @@ if (quite) {
 }
 
 (async function () {
-  const parsed = url.parse(uri);
+  const parsed = {
+    host: uri.split(":")[0],
+    port: uri.split(":")[1],
+  };
 
   const fetch = function (opt) {
-    return new Promise((res, rej) => {
-      const cb = (response) => {
-        response.on("data", (chunk) => {
-          res(chunk);
-        });
-      };
+    const socket = new net.Socket();
 
-      if (parsed.protocol === "https:") {
-        const req = https.request(opt, cb).end();
-        req.on("error", function (e) {
-          rej(e);
-        });
-      } else {
-        const req = http.request(opt, cb).end();
-        req.on("error", function (e) {
-          rej(e);
-        });
-      }
+    return new Promise((res, rej) => {
+      socket.connect(opt.port, opt.host, function () {
+        res();
+        socket.destroy(); // kill client after server's response
+      });
+
+      socket.on("data", function (data) {
+        res(data);
+        socket.destroy(); // kill client after server's response
+      });
+
+      socket.on("error", function (data) {
+        rej(data);
+        socket.destroy(); // kill client after server's response
+      });
+
+      socket.on("close", function () {
+        res();
+      });
     });
   };
 
@@ -109,14 +117,14 @@ if (quite) {
   };
 
   const execute = () => {
-    return exec(command)
-      .then((v) => {
-        if (v.stdout) console.log(v.stdout.slice(0, -1));
-        if (v.stderr) console.error(v.stdout.slice(0, -1));
-      })
-      .catch((v) => {
-        if (v) console.error(v.toString().slice(0, -1));
-      });
+    const cmd = command.split(" ")[0];
+    const args = command.split(" ").slice(1);
+
+    exec(cmd, args, {
+      detached: true,
+      stdio: ["ignore", 1, 2],
+      shell: true,
+    }).unref();
   };
 
   let index = 0;
@@ -124,11 +132,11 @@ if (quite) {
   const s = (sleep || 10) * 1000;
 
   while (index < (retry || 10)) {
-    if (port) host.port = port;
-    if (host) host.host = host;
+    if (port) parsed.port = port;
+    if (host) parsed.host = host;
 
     success = false;
-    console.log(`* trying to contact ${uri}...`);
+
     await fetch({ ...parsed, timeout: timeout })
       .then(() => {
         success = true;
@@ -141,7 +149,7 @@ if (quite) {
       console.log(`${uri} is available after ${(index * s) / 1000}s`);
       break;
     } else {
-      console.log(`waiting ${s / 1000}s for ${uri} to become responsive...`);
+      console.log(`* waiting ${s / 1000}s for ${uri} to become responsive...`);
       await threadSleep(s);
     }
 
@@ -149,6 +157,7 @@ if (quite) {
   }
 
   if (!strict || success) {
-    await execute();
+    execute();
+    // process.exit();
   }
 })();

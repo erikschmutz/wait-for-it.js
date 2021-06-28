@@ -1,6 +1,6 @@
 {
   "name": "wait-for-it.js",
-  "version": "0.2.0",
+  "version": "0.92.0",
   "description": "",
   "homepage": "https://github.com/erikschmutz/wait-for-it.js",
   "repository": {
@@ -9,7 +9,7 @@
   },
   "main": "index.js",
   "bin": {
-    "wait-for-it.js": "./index"
+    "wait-for-it.js": "./index.js"
   },
   "scripts": {
     "start": "node index"
